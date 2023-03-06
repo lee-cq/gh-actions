@@ -1,0 +1,48 @@
+# 下载任务创建工作流
+
+name: downloader
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+  # 允许您从Actions选项卡手动运行此工作流
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Issue created
+        run: |
+          echo issue.title: ${{ github.event.issue.title }}
+          echo issue.body: ${{ github.event.issue.body }}
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+
+      - name: Add Comment to Issue
+        # You may pin to the exact commit or the version.
+        # uses: jdvr/action-add-comment@05b6c9eeb829ca8296aad62821864eccfc52a592
+        uses: jdvr/action-add-comment@v1.0.1
+        with:
+          # The content of the comment, use $ to resolve environment variables
+          comment: |
+            Hello, world!
+            This is a comment from the action-add-comment action.
+            The issue title is: ${{ github.event.issue.title }}
+            The issue body is: ${{ github.event.issue.body }}
