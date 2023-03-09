@@ -31,8 +31,10 @@ jobs:
             echo "Rclone Config is Error"
             exit 1
           fi
-          
-          rclone about ${{env.RCLONE_REMOTE_NAME}}: --fast-list --stats=1s --stats-one-line
+
+      - name: Update Rclone Config to file
+        run: |
+          rclone about ${{vars.RCLONE_REMOTE_NAME}}: --fast-list --stats=1s --stats-one-line
           RCLONE_EXIT_CODE=$?
           if [ $RCLONE_EXIT_CODE -eq 0 ]; then
             echo "Rclone is OK"
@@ -41,7 +43,7 @@ jobs:
             exit 1
           fi
 
-      - name: Update Rclone Config
+      - name: Update Rclone Config to GitHub
         run: |
           gh secret set RCLONE_CONFIG < ~/.config/rclone/rclone.conf
           GH_EXIT_CODE=$?
@@ -51,3 +53,5 @@ jobs:
                 echo "Update Rclone Config is Error"
                 exit 1
             fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
