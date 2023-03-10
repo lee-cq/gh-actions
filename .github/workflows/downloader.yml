@@ -9,11 +9,11 @@ on:
     types: [created, edited]
 
   workflow_dispatch:
-    body:
-      string:
+    inputs:
+      body:
         description: '下载链接'
         required: true
-
+        type: string
 
 jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
   input: # 处理输入信息
