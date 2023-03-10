@@ -54,7 +54,6 @@ if DOWNLOAD_NAME is None:
     DOWNLOAD_NAME = urlparse(DOWNLOAD_LINK).path().split('/')[-1]
         
 
-
 with Path(github_env).open('a', encoding='utf8') as ff:
     if DOWNLOAD_LINK:
         ff.write(f'\n{DOWNLOAD_LINK=}')

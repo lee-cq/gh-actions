@@ -52,7 +52,18 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
           fi
 
           python3 actions/downloader/prase_body.py
-    
+      
+      - name: Assert Args
+        run: |
+          if [ -z ${{ env.DOWNLOAD_LINK }} ];then
+            echo "No Env DOWNLOAD_LINK"
+          fi
+          if [ -z ${{ env.DOWNLOAD_NAME }} ];then
+            echo "No Env DOWNLOAD_NAME"
+          fi
+          if [ -z ${{ env.DOWNLOAD_TYPE }} ];then
+            echo "No Env DOWNLOAD_TYPE"
+          fi
 
       - name: Install Rclone  # TODO: Cache
         run: |
@@ -65,18 +76,17 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
           cat << EOF > ~/.config/rclone/rclone.conf
           ${{ secrets.RCLONE_CONFIG }}
           EOF
-          
-
-      - name: Install python3.11
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.11'
-
-      - name: Install requirements
-        run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
       
+      - name: Download Link with Name
+        run: |
+          wget -O ${{ env.DOWNLOAD_NAME }} ${{ env.DOWNLOAD_LINK }}
+      
+      - name: Upload File To OneDrive
+        run: |
+          rclone copy ${{ env.DOWNLOAD_NAME }} ${{ vers.RCLONE_REMOTE_NAME }}:/
+
+      - name: Verify
+        run: |
+          rclone ls {{ vers.RECLONE_REMOTE_NAME }}:/${{ env.DOWNLOAD_NAME }}
             
       
