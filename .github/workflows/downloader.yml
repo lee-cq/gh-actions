@@ -83,10 +83,10 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
       
       - name: Upload File To OneDrive
         run: |
-          rclone copy ${{ env.DOWNLOAD_NAME }} ${{ vers.RCLONE_REMOTE_NAME }}:/
+          rclone copy ${{ env.DOWNLOAD_NAME }} ${{ vars.RCLONE_REMOTE_NAME }}:/
 
       - name: Verify
         run: |
-          rclone ls {{ vers.RECLONE_REMOTE_NAME }}:/${{ env.DOWNLOAD_NAME }}
+          rclone ls {{ vars.RECLONE_REMOTE_NAME }}:/${{ env.DOWNLOAD_NAME }}
             
       
