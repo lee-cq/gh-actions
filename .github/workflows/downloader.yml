@@ -8,33 +8,32 @@ on:
   issue_comment:
     types: [created, edited]
 
-  # 允许您从Actions选项卡手动运行此工作流
   workflow_dispatch:
+    body:
+      string:
+        description: '下载链接'
+        required: true
 
 
 jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
   input: # 处理输入信息
     runs-on: ubuntu-latest
     steps:
-     
-#      - name: Setup Debug Session
-#        uses: csexton/debugger-action@master
 
-      # 如果是一个新的Issue，通过Title来判断是否需要
-      - uses: shaowenchen/debugger-action@v2 
-        name: debugger 
-        timeout-minutes: 300 
-        continue-on-error: true 
-        with: 
-          ngrok_token: ${{ secrets.NGROK_TOKEN }} 
-
-      - name: 
-        if: github.event.issue.comments
+      - name: If is a Comment
+        if: github.event.comment.body
         run: |
-          echo issue.title: ${{ github.event.issue.title }}
-          echo issue.body: ${{ github.event.issue.body }}
+          echo DOWNLOAD_BODY=${{ github.event.comment.body }} >> $GITHUB_ENV
 
-      
+      - name: If is a Issue
+        if: github.event.issue.body
+        run: |
+          echo DOWNLOAD_BODY=${{ github.event.issue.body }} >> $GITHUB_ENV
+
+      - name: If Dispatch
+        if: github.event.inputs
+        run: |
+          echo DOWNLOAD_BODY=${{ github.event.inputs.body }} >> $GITHUB_ENV
   
   downloader:
     needs: input
@@ -44,6 +43,30 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
     steps:
       - uses: actions/checkout@v3
 
+      - name: Pasrse DOWNLOAD_BODY
+        run: |
+          echo ${{ env.DOWNLOAD_BODY }}
+          if [ -z "${{ env.DOWNLOAD_BODY }}" ]; then
+            echo "No download link found"
+            exit 1
+          fi
+
+          python3 actions/downloader/prase_body.py
+    
+
+      - name: Install Rclone  # TODO: Cache
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Local Rclone Config
+        run: |
+          mkdir -p ~/.config/rclone
+          cat << EOF > ~/.config/rclone/rclone.conf
+          ${{ secrets.RCLONE_CONFIG }}
+          EOF
+          
+
       - name: Install python3.11
         uses: actions/setup-python@v2
         with:
@@ -51,5 +74,9 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
 
       - name: Install requirements
         run: |
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+      
+            
       
