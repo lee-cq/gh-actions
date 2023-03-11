@@ -35,12 +35,6 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
         run: |
           echo DOWNLOAD_BODY=${{ github.event.inputs.body }} >> $GITHUB_ENV
   
-  downloader:
-    needs: input
-    runs-on: ubuntu-latest
-    name: Downloader
-
-    steps:
       - uses: actions/checkout@v3
 
       - name: Pasrse DOWNLOAD_BODY
