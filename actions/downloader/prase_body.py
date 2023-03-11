@@ -51,7 +51,7 @@ if DOWNLOAD_TYPE is None:
     DOWNLOAD_TYPE = SUPPORT_DOWNTYPES[0]
 
 if DOWNLOAD_NAME is None:
-    DOWNLOAD_NAME = urlparse(DOWNLOAD_LINK).path().split('/')[-1]
+    DOWNLOAD_NAME = urlparse(DOWNLOAD_LINK).path.split('/')[-1]
         
 
 with Path(github_env).open('a', encoding='utf8') as ff:
