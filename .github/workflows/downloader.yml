@@ -82,6 +82,6 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
 
       - name: Verify
         run: |
-          rclone ls ${{ vars.RECLONE_REMOTE_NAME }}:/${{ env.DOWNLOAD_NAME }}
+          rclone ls ${{ vars.RCLONE_REMOTE_NAME }}:/${{ env.DOWNLOAD_NAME }}
             
       
