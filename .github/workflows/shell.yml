@@ -1,0 +1,29 @@
+
+name: shell
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+  # 允许您从Actions选项卡手动运行此工作流
+  workflow_dispatch:
+
+
+
+jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
+  input: # 处理输入信息
+    runs-on: ubuntu-latest
+    steps:
+
+#      - name: Setup Debug Session
+#        uses: csexton/debugger-action@master
+
+      # 如果是一个新的Issue，通过Title来判断是否需要
+      - uses: shaowenchen/debugger-action@v2
+        name: debugger
+        timeout-minutes: 300
+        continue-on-error: true
+        with:
+          ngrok_token: ${{ secrets.NGROK_TOKEN }}
