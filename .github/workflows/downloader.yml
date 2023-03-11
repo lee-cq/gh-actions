@@ -70,6 +70,7 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
           cat << EOF > ~/.config/rclone/rclone.conf
           ${{ secrets.RCLONE_CONFIG }}
           EOF
+          sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
       
       - name: Download Link with Name
         run: |
