@@ -17,13 +17,12 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
     runs-on: ubuntu-latest
     steps:
 
-#      - name: Setup Debug Session
-#        uses: csexton/debugger-action@master
+     - name: Setup Debug Session
+       uses: csexton/debugger-action@master
 
-      # 如果是一个新的Issue，通过Title来判断是否需要
-      - uses: shaowenchen/debugger-action@v2
-        name: debugger
-        timeout-minutes: 300
-        continue-on-error: true
-        with:
-          ngrok_token: ${{ secrets.NGROK_TOKEN }}
+      # - uses: shaowenchen/debugger-action@v2
+      #   name: debugger
+      #   timeout-minutes: 300
+      #   continue-on-error: true
+      #   with:
+      #     ngrok_token: ${{ secrets.NGROK_TOKEN }}
