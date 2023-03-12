@@ -1,0 +1,23 @@
+
+name: Update MSAL onedrive token
+
+on:
+  schedule:
+    - cron: '29 0,6,12,18 * * *'  # 每天0点0分执行
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Update Onedrive Token
+        run: |
+          python -m unittest -s
+
+        env:
+          MSAL_CLIENT_ID: ${{ secrets.MSAL_CLIENT_ID }}
+          MSAL_CLIENT_SECRET: ${{ secrets.MSAL_CLIENT_SECRET }}
+          MSAL_ONEDRIVE_TOKEN: ${{ secrets.MSAL_ONEDRIVE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_P_TOKEN }}
