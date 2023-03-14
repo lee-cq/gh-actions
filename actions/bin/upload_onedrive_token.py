@@ -37,5 +37,8 @@ if not (CLIENT_ID and CLIENT_SECRET and TOKEN):
     raise ValueError("未找到OneDrive环境变量。")
 
 one = Onedrive(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, ).load_token(TOKEN)
-print('New Token is ', one.get_token_from_cache()[:20])
+
+if a := one.get_token_from_cache():
+    print('New Token is ', a[:20])
+
 one.save_cache()

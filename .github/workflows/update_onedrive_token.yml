@@ -12,9 +12,28 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install python3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11'
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install requirements
+        if: steps.cache-rclone.outputs.cache-hit != 'true'
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
       - name: Update Onedrive Token
         run: |
-          python actions/bin/upload_onedrive.py
+          python actions/bin/upload_onedrive_token.py
 
         env:
           MSAL_CLIENT_ID: ${{ secrets.MSAL_CLIENT_ID }}

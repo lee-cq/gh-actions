@@ -20,9 +20,14 @@ class Onedrive:
     scope = ['Files.ReadWrite.All', ]
 
     def __init__(self, client_id, client_secret, authority=None):
+        if not client_id:
+            raise ValueError(f'Client ID mast NOT None. {client_id=}')
+        if not client_secret:
+            raise ValueError(f'Client Secret must NOT None. {client_secret}')
+
         self.token_cache = msal.SerializableTokenCache()
         self.msal_app = msal.ConfidentialClientApplication(
-            client_id,
+            client_id=client_id,
             authority=authority or AUTHORITY,
             client_credential=client_secret,
             token_cache=self.token_cache
@@ -32,18 +37,21 @@ class Onedrive:
         """加载Token"""
         try:
             self.token_cache.deserialize(_)
+            return self
         except json.JSONDecodeError:
             logger.warning('反序列化失败，尝试从Refresh Token获取。')
-            a = self.msal_app.acquire_token_by_refresh_token(_, scopes=self.scope)
-            if 'error' in a:
-                raise TokenError(f'Error={a.get("error")}\n'
-                                 f'Description={a.get("error_description")}')
+
+        a = self.msal_app.acquire_token_by_refresh_token(_, scopes=self.scope)
+        if 'error' in a:
+            raise TokenError(f'Error={a.get("error")}\n'
+                             f'Description={a.get("error_description")}')
+        return self
 
     def save_cache(self):
         """将Token保存到 GitHub Secret"""
         if self.token_cache.has_state_changed:
             subprocess.run(['gh', 'secret', 'set', 'MSAL_ONEDRIVE_TOKEN'],
-                           input=self.token_cache.serialize(),
+                           input=self.token_cache.serialize().encode(),
                            check=True
                            )
 
