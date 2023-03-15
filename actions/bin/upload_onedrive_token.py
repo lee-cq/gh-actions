@@ -36,7 +36,7 @@ TOKEN = os.getenv('MSAL_ONEDRIVE_TOKEN')
 if not (CLIENT_ID and CLIENT_SECRET and TOKEN):
     raise ValueError("未找到OneDrive环境变量。")
 
-one = Onedrive(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, ).load_token(TOKEN)
+one = Onedrive(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, drive_type='me').load_token(TOKEN)
 
 if a := one.get_token_from_cache():
     print('New Token is ', a[:20])
