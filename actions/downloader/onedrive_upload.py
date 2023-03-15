@@ -2,6 +2,7 @@
 # coding: utf8
 
 import json
+import os
 import subprocess
 import logging
 
@@ -81,7 +82,10 @@ class Onedrive:
 
 
 if __name__ == '__main__':
-    refresh_token = '0.AXEAEaSLS6NOsk2V4JDzDPRjpzglw_RBmrFDglqYssVBHtpxADg.AgABAAEAAAD--DLA3VO7QrddgJg7WevrAgDs_wUA9P-P8qryn5bS2895_5kftpdXMnXDOX-mna4G7XTUYLlSXp9a0UuWoDRMWYXuvm8pws1jcB847UyiT6-E1J4_gXzdMFax_lewteervtkzIBp8p9qA7ROyiwD4a_bzTxTP7QZ9e92KHiVZuxoStnsXvtCeJpNIIBbmtEpFvsSiIrSEueuXnzH5x4XrCpLn-Ito0VZP_-8DZASdN2UpqEwIHr3HRm19PFDchz1xwXcGPuGQQn-1D3l3EgDqZL3elal3vKCgQmM_eKbRwtN4MC8nyqoz38naM4bC_OBjb7PU_yEF8grLy2UhzGUUMmE_IqevLF-7hvkVMCXSw3e2bvGpoGT7z-PN8lTJ72LtNPJhK7N_s370r5x7_6WkZ2ypEWRpS_hV-UHwzYgHxaLbv-WBfCMFddyn-mTXsEIPWHZNSiSO2srDrSuFx6BOGnOpaexihfh2vjI3GwFyNq04p-HivpI66gHNtFfdEOOobIUdiKI8YLjV4p6wqrgUh_rzG6tKScMGWW6udEOyrJ4fso7m3qFIDBH1twqi2z9wAXfBOrAihN5e1xfre2px0s5fG03-F6DVxXDCWKDXQyAuc1my1pVHRg6TM57gR_GViQbZao7-HI30EANZnje1VpBEXqjuxdSIqaDY_7sq-E8VnC9WmVek94ajuh7_fcIm4sLO2IpIh7lAM6fNlkaL3RXwUks561qwLpuRibAjYzMv8LMPOvw3YPxleCfacuaJY1Z5NOEC9a3iQt9hjhiNYJxJpR12wMUeFZcj7cHjo2W35qYid-y4DfJSXgEs8S5So_ctSiyKAuk8wa4pXOg6KLbblD42BvOK'
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    refresh_token = os.getenv('MSAL_ONEDRIVE_TOKEN')
     o = Onedrive('f4c32538-9a41-43b1-825a-98b2c5411eda', 'CnU8Q~Az1sA5g.wn6E6vqSsbH0RZjbVqNas9ybWP')
     nt = o.msal_app.acquire_token_by_refresh_token(refresh_token=refresh_token, scopes=[])
     print(json.dumps(nt))
