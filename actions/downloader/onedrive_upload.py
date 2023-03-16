@@ -7,6 +7,7 @@ import subprocess
 import logging
 import urllib.parse
 from abc import ABC
+from pathlib import Path
 from typing import List
 
 import msal
@@ -51,20 +52,29 @@ class Ms365Client(ABC):
         except json.JSONDecodeError:
             logger.warning('反序列化失败，尝试从Refresh Token获取。')
 
-        a = self.msal_app.acquire_token_by_refresh_token(refresh_token=_, scopes=self.scope)
-        if 'error' in a:
-            raise TokenError(f'Error={a.get("error")}\n'
-                             f'Description={a.get("error_description")}')
+        loaded = self.msal_app.acquire_token_by_refresh_token(refresh_token=_, scopes=self.scope)
+        if 'error' in loaded:
+            raise TokenError(f'Error={loaded.get("error")}\n'
+                             f'Description={loaded.get("error_description")}')
         logger.info('Load Token From Refresh Token Success.')
         return self
 
     def save_cache(self):
         """将Token保存到 GitHub Secret"""
+        env_file = Path('.env')
         if self.token_cache.has_state_changed:
-            subprocess.run(['gh', 'secret', 'set', 'MSAL_ONEDRIVE_TOKEN'],
-                           input=self.token_cache.serialize().encode(),
-                           check=True
-                           )
+            if env_file.exists():
+                pass
+                # TODO 更新.env 文件
+            else:
+                subprocess.run(['gh', 'secret', 'set', 'MSAL_ONEDRIVE_TOKEN'],
+                               input=self.token_cache.serialize().encode(),
+                               check=True
+                               )
+
+    def get_refresh_token(self):
+        """"""
+        self.token_cache.find('RefreshToken')
 
     def get_token_from_cache(self):
         """
@@ -93,7 +103,7 @@ class Ms365Client(ABC):
 
         headers.setdefault('Authorization', f'Bearer {self.get_token_from_cache()}')
 
-        return requests.request(method=method, url=url, headers=headers, **kwargs)
+        return requests.request(method=method, url=url, headers=headers, **kwargs).json()
 
 
 class Onedrive(Ms365Client):
@@ -121,9 +131,15 @@ class Onedrive(Ms365Client):
             return _base_url
         raise TypeError(f'Not Support Drive. {self.drive_type}')
 
-    def ls(self, path='/'):
-        """列出驱动器文件"""
-        url = self.api_point + '/root:' + urllib.parse.quote(path) + ':/children'
+    def ls(self, path='') -> dict:
+        """列出驱动器文件
+
+        :param path: 驱动器中目录的绝对路径，只能是一个目录的路径。
+        :rtype dict 该路径中的文件属性
+        """
+        quote_path = f':{urllib.parse.quote(path)}:' if path else ''
+
+        url = self.api_point + '/root' + quote_path + '/children'
         return self.request('get', url)
 
     def upload_stream(self, parent_id, data: bytes):
@@ -145,9 +161,16 @@ if __name__ == '__main__':
     load_dotenv()
     logging.basicConfig(level='DEBUG')
 
+
+    def jsonify(data: dict):
+        return json.dumps(
+            data, ensure_ascii=False, indent=2
+        )
+
+
     refresh_token = os.getenv('MSAL_ONEDRIVE_TOKEN')
     CLIENT_ID = os.getenv('MSAL_CLIENT_ID')
     CLIENT_SEC = os.getenv('MSAL_CLIENT_SECRET')
     o = Onedrive(CLIENT_ID, CLIENT_SEC, os.getenv('MSAL_DRIVE_TYPE'), os.getenv('MSAL_DRIVE_ID_TEST'))
     o.load_token(refresh_token)
-    print(o.ls())
+    print(jsonify(o.ls()))
