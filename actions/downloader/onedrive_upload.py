@@ -3,6 +3,7 @@
 
 import json
 import os
+import re
 import subprocess
 import logging
 import urllib.parse
@@ -43,6 +44,10 @@ class Ms365Client(ABC):
             token_cache=self.token_cache
         )
 
+    @property
+    def env_token_name(self):
+        raise NotImplemented
+
     def load_token(self, _):
         """加载Token"""
         try:
@@ -64,17 +69,21 @@ class Ms365Client(ABC):
         env_file = Path('.env')
         if self.token_cache.has_state_changed:
             if env_file.exists():
-                pass
-                # TODO 更新.env 文件
+                env_text = env_file.read_text()
+                new_token = self.get_refresh_token()['secret']
+                old_token = re.findall(r'MSAL_ONEDRIVE_TOKEN=(.*?)\n', env_text)[0]
+                if old_token and new_token:
+                    env_file.write_text(env_text.replace(old_token, new_token))
             else:
                 subprocess.run(['gh', 'secret', 'set', 'MSAL_ONEDRIVE_TOKEN'],
                                input=self.token_cache.serialize().encode(),
                                check=True
                                )
+                logger.info('Update OneDrive Token to Github Actions Secret Success.')
 
     def get_refresh_token(self):
         """"""
-        self.token_cache.find('RefreshToken')
+        return self.token_cache.find('RefreshToken')
 
     def get_token_from_cache(self):
         """
@@ -140,7 +149,25 @@ class Onedrive(Ms365Client):
         quote_path = f':{urllib.parse.quote(path)}:' if path else ''
 
         url = self.api_point + '/root' + quote_path + '/children'
-        return self.request('get', url)
+        return self.request('GET', url)
+
+    def mkdir(self, dirname, parent_path='', exist='rename'):
+        """创建一个目录
+
+        :param parent_path: 父路径
+        :param dirname: 新的DirName
+        :param exist: 当dir已经存在时，如何处理？
+        :return:
+        """
+        quote_path = f':{urllib.parse.quote(parent_path)}:' if parent_path else ''
+
+        url = self.api_point + '/root' + quote_path + '/children'
+        data = {
+            "name": dirname,
+            "folder": {},
+            "@microsoft.graph.conflictBehavior": exist
+        }
+        return self.request('POST', url, json=data)
 
     def upload_stream(self, parent_id, data: bytes):
         """
@@ -173,4 +200,5 @@ if __name__ == '__main__':
     CLIENT_SEC = os.getenv('MSAL_CLIENT_SECRET')
     o = Onedrive(CLIENT_ID, CLIENT_SEC, os.getenv('MSAL_DRIVE_TYPE'), os.getenv('MSAL_DRIVE_ID_TEST'))
     o.load_token(refresh_token)
-    print(jsonify(o.ls()))
+    print(o.get_refresh_token())
+    print(jsonify(o.mkdir('test', '/test')))
