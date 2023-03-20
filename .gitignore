@@ -129,3 +129,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /actions/downloader/flask_session/
+/.env.old
+/test/onedrive_upload.http
