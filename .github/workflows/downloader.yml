@@ -16,30 +16,30 @@ on:
         type: string
 
 jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
-  input: # 处理输入信息
+  downloader: # 处理输入信息
     runs-on: ubuntu-latest
     steps:
 
       - name: If is a Comment
         if: github.event.comment.body
         run: |
-          echo DOWNLOAD_BODY=${{ github.event.comment.body }} >> $GITHUB_ENV
+          echo DOWNLOAD_BODY="${{ github.event.comment.body }}" >> $GITHUB_ENV
 
       - name: If is a Issue
         if: github.event.issue.body
         run: |
-          echo DOWNLOAD_BODY=${{ github.event.issue.body }} >> $GITHUB_ENV
+          echo DOWNLOAD_BODY="${{ github.event.issue.body }}" >> $GITHUB_ENV
 
       - name: If Dispatch
         if: github.event.inputs
         run: |
-          echo DOWNLOAD_BODY=${{ github.event.inputs.body }} >> $GITHUB_ENV
+          echo DOWNLOAD_BODY="${{ github.event.inputs.body }}" >> $GITHUB_ENV
   
       - uses: actions/checkout@v3
 
-      - name: Pasrse DOWNLOAD_BODY
+      - name: Parse DOWNLOAD_BODY
         run: |
-          echo ${{ env.DOWNLOAD_BODY }}
+          echo "${{ env.DOWNLOAD_BODY }}"
           if [ -z "${{ env.DOWNLOAD_BODY }}" ]; then
             echo "No download link found"
             exit 1
