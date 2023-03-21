@@ -259,7 +259,9 @@ class OnedriveUploadSession:
         self.url = session_url
         self.session_body = dict()
 
+        self.session = None
         self._session_created = False
+        self._session_success = False
 
         self.upload_url = None
         self.upload_expiration_time = None
@@ -277,6 +279,11 @@ class OnedriveUploadSession:
         """定义远程名字"""
         if self._session_created:
             raise
+        if not self.onedrive.assert_name(name):
+            raise ValueError
+        protocol, base_url, remote_path, ss = self.url.split(':')
+        remote_path = urllib.parse.unquote(remote_path)
+        self.url = self.onedrive.quote_path(Path(remote_path).with_name(name).as_posix()) + ss
         self.session_body['name'] = name
 
     def set_remote_defer(self, defer):
@@ -324,30 +331,57 @@ class OnedriveUploadSession:
         res: dict = res.json()
 
         self.upload_url = res.get("uploadUrl")
+        self.session = requests.Session()
+        self.session.hooks = dict(response=self.verify)
+
         self.upload_expiration_time = res.get('expirationDateTime')
 
-    def put_data(self, data: bytes, start_range: int = 0):
+    def created(self):
+        """传输Session已经完成"""
+        logger.info('File %s is uploaded Success.', self.session_body.get('name'))
+
+    def verify(self, resp: requests.Response, *args, **kwargs):
+        """用于 Request Hooks 的验证方法"""
+
+        ranges = resp.request.headers.get('Content-Range')
+
+        if resp.status_code // 100 != 2:  # 返回非2**时，重载数据
+            logger.warning(f'upload Range %s With Error HTTP Status %d',
+                           ranges, resp.status_code)
+            self.add_reload(resp.request.body, int(ranges.replace('bytes ', '').split('-')[0]))
+            resp.upload_status = 'continue'
+
+        elif resp.status_code in [200, 201]:  # 上传完成
+            logger.debug('Upload Session Return 200.')
+            resp_data: dict = resp.json()
+
+            if resp_data.get('name') == self.session_body['name'] and \
+                    resp_data.get('size') == self.session_body['size']:
+                self.created()
+                logger.debug('Uploaded Range %s', ranges)
+                resp.upload_status = 'success'
+            else:
+                logger.warning('%s Load Fail.', self.session_body.get('name'))
+                resp.upload_status = 'fild'
+
+        return resp
+
+    def put_data(self, data: bytes, start_range: int = 0, error_callback=None):
         """Upload Data"""
         len_data = len(data)
         end_range = start_range + len_data - 1
         if len_data < self.MS_STEP_LEN and len_data // self.MS_STEP_LEN != 0:
             raise  # TODO
+        if error_callback is None:
+            error_callback = self.add_reload
 
         header = {'Content-Range': f'bytes {start_range}-{end_range}/{self.upload_size}'}
         try:
-            res = requests.put(self.upload_url, headers=header, data=data)
-            if res.status_code in [202, 200]:
-                logger.debug(f'Uploaded Range {start_range}-{end_range}')
-                return res.json()
-            else:
-                logger.warning(f'upload Range %d-%d With Error HTTP Status %d',
-                               start_range, end_range, res.status_code)
-                self.reload_data.setdefault(start_range, data)
-                self.reload_times[start_range] += 1
+            return self.session.put(self.upload_url, headers=header, data=data)
+
         except requests.RequestException as _e:
             logger.warning('Upload Range %d-%d With Network Error as %s', start_range, end_range, _e)
-            self.reload_data.setdefault(start_range, data)
-            self.reload_times[start_range] += 1
+            self.add_reload(data, start_range)
 
     def cancel(self):
         """取消上传"""
@@ -357,12 +391,17 @@ class OnedriveUploadSession:
         self.reload_data = dict()
 
     def reload(self):
+        """在允许的重试次数内，重新上载失败的部分。"""
         while True:
-            start_range, data = self.reload_data
-            if self.reload_times[start_range] > 5:  # TODO Args
-                self.cancel()
-                raise
-            self.put_data(data, start_range)
+            try:
+                start_range, data = self.reload_data.popitem()
+                if self.reload_times[start_range] > 5:  # TODO Args
+                    self.cancel()
+                    raise
+                self.put_data(data, start_range)
+            except KeyError:
+                logger.info('Reload all Completed.')
+                break
 
     def from_file(self, file, remote_name=None):
         file = Path(file)
@@ -370,8 +409,8 @@ class OnedriveUploadSession:
             raise  # TODO
 
         size = file.stat().st_size
-        if not remote_name:
-            self.set_remote_name(remote_name or file.name)
+        if not remote_name or not self.session_body.get('name'):  #
+            self.set_remote_name(remote_name)
 
         self.create_session(size)
 
@@ -388,8 +427,19 @@ class OnedriveUploadSession:
 
         self.reload()
 
-    def from_url(self, url):
-        pass
+    def from_url(self, url, remote_name=None, **kwargs):
+        """从URL上载一个文件"""
+        if not remote_name or not self.session_body.get('name'):  #
+            self.set_remote_name(remote_name)
+        requests.get(url, **kwargs)
+
+    def from_stdin(self, remote_name=None):
+        """从标准输入获取数据"""
+        if not remote_name or not self.session_body.get('name'):  #
+            self.set_remote_name(remote_name)
+
+    def from_qbit(self, ):
+        """从QBit获取数据"""
 
 
 if __name__ == '__main__':
@@ -410,8 +460,8 @@ if __name__ == '__main__':
     CLIENT_SEC = os.getenv('MSAL_CLIENT_SECRET')
     o = Onedrive(CLIENT_ID, CLIENT_SEC, os.getenv('MSAL_DRIVE_TYPE'), os.getenv('MSAL_DRIVE_ID_TEST'))
     o.load_token(refresh_token)
-    print(o.get_refresh_token())
+    print(o.get_token_from_cache())
     # print(jsonify(o.upload_stream('a.txt', data='s'.encode())))
-    session = o.create_upload_session('clash-darwin-arm64')
-    session.from_file('/Users/lcq/Downloads/clash-darwin-arm64')
+    session = o.create_upload_session('test.mp4')
+    session.from_file('/Users/lcq/Downloads/1_1_48ed6325509e3d97c2b6eed7eabd821dc61c7518.mp4')
     session
