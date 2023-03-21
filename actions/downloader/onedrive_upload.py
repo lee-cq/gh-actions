@@ -264,7 +264,7 @@ class OnedriveUploadSession:
         self.upload_url = None
         self.upload_expiration_time = None
         self.upload_size = 0
-        self.reload = dict()
+        self.reload_data = dict()
         self.reload_times = defaultdict(int)
 
     def set_remote_conflict(self, conflict):
@@ -299,11 +299,11 @@ class OnedriveUploadSession:
         self.session_body['description'] = desc
 
     def add_reload(self, data, start_range):
-        self.reload.setdefault(start_range, data)
+        self.reload_data.setdefault(start_range, data)
         self.reload_times[start_range] += 1
 
     def remove_reload(self, start_range):
-        self.reload.pop(start_range, None)
+        self.reload_data.pop(start_range, None)
         self.reload_times.pop(start_range, None)
 
     def create_session(self, size=None):
@@ -336,18 +336,17 @@ class OnedriveUploadSession:
         header = {'Content-Range': f'bytes {start_range}-{end_range}/{self.upload_size}'}
         try:
             res = requests.put(self.upload_url, headers=header, data=data)
-            if res.status_code == 202:
+            if res.status_code in [202, 200]:
                 logger.debug(f'Uploaded Range {start_range}-{end_range}')
-
                 return res.json()
             else:
                 logger.warning(f'upload Range %d-%d With Error HTTP Status %d',
                                start_range, end_range, res.status_code)
-                self.reload.setdefault(start_range, data)
+                self.reload_data.setdefault(start_range, data)
                 self.reload_times[start_range] += 1
         except requests.RequestException as _e:
             logger.warning('Upload Range %d-%d With Network Error as %s', start_range, end_range, _e)
-            self.reload.setdefault(start_range, data)
+            self.reload_data.setdefault(start_range, data)
             self.reload_times[start_range] += 1
 
     def cancel(self):
@@ -355,7 +354,15 @@ class OnedriveUploadSession:
         requests.delete(self.upload_url)
         self.upload_url = None
         self.reload_times = defaultdict(int)
-        self.reload = dict()
+        self.reload_data = dict()
+
+    def reload(self):
+        while True:
+            start_range, data = self.reload_data
+            if self.reload_times[start_range] > 5:  # TODO Args
+                self.cancel()
+                raise
+            self.put_data(data, start_range)
 
     def from_file(self, file, remote_name=None):
         file = Path(file)
@@ -378,6 +385,8 @@ class OnedriveUploadSession:
                     break
                 res = self.put_data(data, start_range=start_range)
                 start_range += step
+
+        self.reload()
 
     def from_url(self, url):
         pass
