@@ -8,6 +8,7 @@ import subprocess
 import logging
 import urllib.parse
 from abc import ABC
+from collections import defaultdict
 from pathlib import Path, PurePosixPath
 from typing import List
 
@@ -241,7 +242,7 @@ class Onedrive(Ms365Client):
         """
         url = self.quote_path(parent_path + f'{file_name}') + '/createUploadSession'
 
-        _session = OnedriveUploadSession(session_request=self.request, session_url=url, )
+        _session = OnedriveUploadSession(self, session_url=url, )
         _session.set_remote_name(name=file_name)
         _session.set_remote_conflict(conflict)
         _session.set_remote_description(description)
@@ -251,10 +252,10 @@ class Onedrive(Ms365Client):
 
 
 class OnedriveUploadSession:
-    MS_STEP_LEN = 327680
+    MS_STEP_LEN = 327680 * 10  # 3MB 左右
 
-    def __init__(self, session_request, session_url):
-        self.msal_request = session_request
+    def __init__(self, drive_client: Onedrive, session_url):
+        self.onedrive = drive_client
         self.url = session_url
         self.session_body = dict()
 
@@ -263,6 +264,8 @@ class OnedriveUploadSession:
         self.upload_url = None
         self.upload_expiration_time = None
         self.upload_size = 0
+        self.reload = dict()
+        self.reload_times = defaultdict(int)
 
     def set_remote_conflict(self, conflict):
         """定义远程冲突"""
@@ -295,12 +298,20 @@ class OnedriveUploadSession:
             raise
         self.session_body['description'] = desc
 
+    def add_reload(self, data, start_range):
+        self.reload.setdefault(start_range, data)
+        self.reload_times[start_range] += 1
+
+    def remove_reload(self, start_range):
+        self.reload.pop(start_range, None)
+        self.reload_times.pop(start_range, None)
+
     def create_session(self, size=None):
         """"""
         if size:
             self.set_remote_size(size)
 
-        res: requests.Response = self.msal_request('POST', self.url, json=self.session_body)
+        res: requests.Response = self.onedrive.request('POST', self.url, json=self.session_body)
 
         if res.status_code != 200:
             _j = res.json()
@@ -316,20 +327,35 @@ class OnedriveUploadSession:
         self.upload_expiration_time = res.get('expirationDateTime')
 
     def put_data(self, data: bytes, start_range: int = 0):
-
+        """Upload Data"""
         len_data = len(data)
+        end_range = start_range + len_data - 1
         if len_data < self.MS_STEP_LEN and len_data // self.MS_STEP_LEN != 0:
             raise  # TODO
 
-        header = {'Content-Range': f'bytes {start_range}-{start_range + len_data - 1}/{self.upload_size}'}
+        header = {'Content-Range': f'bytes {start_range}-{end_range}/{self.upload_size}'}
+        try:
+            res = requests.put(self.upload_url, headers=header, data=data)
+            if res.status_code == 202:
+                logger.debug(f'Uploaded Range {start_range}-{end_range}')
 
-        requests.put(self.upload_url, headers=header, data=data)
-        logger.debug(f'Uploaded Range {start_range}-{start_range + len_data - 1}')
+                return res.json()
+            else:
+                logger.warning(f'upload Range %d-%d With Error HTTP Status %d',
+                               start_range, end_range, res.status_code)
+                self.reload.setdefault(start_range, data)
+                self.reload_times[start_range] += 1
+        except requests.RequestException as _e:
+            logger.warning('Upload Range %d-%d With Network Error as %s', start_range, end_range, _e)
+            self.reload.setdefault(start_range, data)
+            self.reload_times[start_range] += 1
 
     def cancel(self):
         """取消上传"""
         requests.delete(self.upload_url)
-
+        self.upload_url = None
+        self.reload_times = defaultdict(int)
+        self.reload = dict()
 
     def from_file(self, file, remote_name=None):
         file = Path(file)
@@ -350,8 +376,8 @@ class OnedriveUploadSession:
                 if not data:
                     logger.debug('Break, ')
                     break
-                self.put_data(data, start_range=start_range)
-                start_range += step - 1
+                res = self.put_data(data, start_range=start_range)
+                start_range += step
 
     def from_url(self, url):
         pass
@@ -378,5 +404,5 @@ if __name__ == '__main__':
     print(o.get_refresh_token())
     # print(jsonify(o.upload_stream('a.txt', data='s'.encode())))
     session = o.create_upload_session('clash-darwin-arm64')
-    session
     session.from_file('/Users/lcq/Downloads/clash-darwin-arm64')
+    session
