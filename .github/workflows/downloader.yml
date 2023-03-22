@@ -10,10 +10,15 @@ on:
 
   workflow_dispatch:
     inputs:
-      body:
+      download_link:
         description: '下载链接'
         required: true
         type: string
+      download_name: 
+        description: '保存名称'
+        required: false
+        type: string
+      
 
 jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
   downloader: # 处理输入信息
@@ -33,7 +38,8 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
       - name: If Dispatch
         if: github.event.inputs
         run: |
-          echo DOWNLOAD_BODY="${{ github.event.inputs.body }}" >> $GITHUB_ENV
+          echo DOWNLOAD_BODY="${{ github.event.inputs.download_link }}" >> $GITHUB_ENV
+          echo DOWNLOAD_NAME="${{ github.event.inputs.download_name }}" >> $GITHUB_ENV
   
       - uses: actions/checkout@v3
 
