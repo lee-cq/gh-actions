@@ -51,7 +51,7 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
             exit 1
           fi
 
-          python3 actions/downloader/prase_body.py
+          python3 actions/downloader/parse_body.py
       
       - name: Assert Args
         run: |
