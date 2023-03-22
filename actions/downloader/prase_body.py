@@ -42,7 +42,7 @@ for line in body.splitlines():
 
     for protocol in SUPPORT_DOWNTYPES:  
         if 'name:' in line and protocol not in line:
-            DOWNLOAD_NAME=line.split('name:')[-1].strip(' ', '').strip('\n', '')
+            DOWNLOAD_NAME=line.split('name:')[-1].replace(' ', '').replace('\n', '')
 
 if DOWNLOAD_LINK is None:
     exit(1)
