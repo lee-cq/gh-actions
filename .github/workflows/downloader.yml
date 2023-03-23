@@ -45,13 +45,11 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
 
       - name: Parse DOWNLOAD_BODY
         run: |
-          echo "${{ env.DOWNLOAD_BODY }}"
-          if [ -z "${{ env.DOWNLOAD_BODY }}" ]; then
-            echo "No download link found"
-            exit 1
-          fi
-
-          python3 actions/downloader/parse_body.py
+          python3 actions/downloader/prase_body.py
+        env:
+          INPUT_BODY: ${{ github.event.inputs.download_link }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          COMMIT_BODY: ${{ github.event.comment.body }}
       
       - name: Assert Args
         run: |

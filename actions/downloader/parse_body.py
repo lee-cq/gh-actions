@@ -18,8 +18,17 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 
-body = os.getenv('DOWNLOAD_BODY')
+body = os.getenv(
+    'INPUT_BODY', os.getenv(
+        'ISSUE_BODY', os.getenv(
+            'COMMIT_BODY', None
+        )
+    )
+)
 github_env = os.getenv('GITHUB_ENV')
+
+if body is None:
+    raise ValueError()
 
 SUPPORT_PROTOCOLS = ('http://', 'https://', )
 SUPPORT_DOWNTYPES = ('defualt', 'm3u8')
