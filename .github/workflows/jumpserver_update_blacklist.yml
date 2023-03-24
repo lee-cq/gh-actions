@@ -1,0 +1,26 @@
+
+on:
+  schedule:
+    - cron:  '30 5,17 * * *'
+
+jobs:
+  update_blacklist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      - run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+      
+      - run: python actions/bin/jump_update_blacklist.py
+        env: 
+          HOST: ${{secrets.JUMPSERVER_HOST}}
+          PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
+          
+        
+

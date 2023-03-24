@@ -16,8 +16,10 @@ import os
 import datetime
 from collections import defaultdict
 
-HOST=os.getenv()
-PTOKEN=os.getenv()
+logger = logging.getLogger('actions.jumpserver.upload_blacklist')
+
+HOST=os.getenv('HOST')
+PTOKEN=os.getenv('PTOKEN')
 
 AUTH_HEADER = {
     'Authorization': f'Token {PTOKEN}',
@@ -40,11 +42,12 @@ def get_malicious_ips():
     }
     j = requests.get(url, params=args, headers=AUTH_HEADER)
     if j.status_code !=200:
+        logger.error('Get Settings Error %d, \ndata=%s',j.status_code, j.text())
         raise requests.exceptions.HTTPError()
     error_times = defaultdict(int)
     
     for i in j:
-        if i[''] == '深圳's:
+        if i['city'] == '深圳':
             continue
         error_times[i["ip"]] += 1
     
@@ -57,6 +60,7 @@ def get_settings():
     url = HOST + '/api/v1/settings/setting/?category=security'
     j = requests.get(url, headers=AUTH_HEADERS)
     if j.status_code != 200:
+        logger.error('Get Settings Error %d, \ndata=%s',j.status_code, j.text())
         raise requests.exceptions.HTTPError()
     
     return j.json()
@@ -82,5 +86,13 @@ def main():
         exit(1)
 
 if __name__ == "__main__":
+    fmt = logging.Formatter(
+        '%(asctime)s  [%(levelname)s] %(msg)s' 
+    )
+    a = logging.FileHandler(filename='~/jump_update_blacklist.log')
+    a.setFormatter(fmt=fmt)
+    a.setLevel('DEBUG')
+    logger.addHandler(a)
+
     main()
 
