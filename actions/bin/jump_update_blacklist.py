@@ -44,10 +44,43 @@ def get_malicious_ips():
     error_times = defaultdict(int)
     
     for i in j:
+        if i[''] == '深圳's:
+            continue
         error_times[i["ip"]] += 1
     
     return [k for k,v in error_times.items() if v >5]
 
 
+def get_settings():
+    """获取配置字典
+    """
+    url = HOST + '/api/v1/settings/setting/?category=security'
+    j = requests.get(url, headers=AUTH_HEADERS)
+    if j.status_code != 200:
+        raise requests.exceptions.HTTPError()
+    
+    return j.json()
 
-      
+
+def upload_settings(settings):
+    """更新配置字典"""
+    url = HOST + '/api/v1/settings/setting/?category=security'
+    j = requests.patch(url, json=settings,headers=AUTH_HEADERS)
+    return j.status_code
+
+def main():
+    blacklist = get_malicious_ips()
+    settings:list = get_settings()
+    old_list:list= settings.get("SECURITY_LOGIN_IP_BLACK_LIST", [])
+    new_list = list(set(old_list.extend(settings)))
+    settings["SECURITY_LOGIN_IP_BLACK_LIST"] = new_list
+    
+    resp = upload_settings(settings=settings)
+    if resp == 200:
+        exit(0)
+    else:
+        exit(1)
+
+if __name__ == "__main__":
+    main()
+
