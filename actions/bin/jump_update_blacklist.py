@@ -10,8 +10,9 @@ get https://JumpServer/api/v1/audits/login-logs/?date_from=DATA&date_to=DATA&off
 """
 
 import logging
+import sys
+
 import requests
-import json
 import os
 import datetime
 from collections import defaultdict
@@ -107,17 +108,7 @@ def main():
 
 
 if __name__ == "__main__":
-    fmt = logging.Formatter(
-        '%(asctime)s  [%(levelname)s] %(msg)s'
-    )
-    HOME = os.getenv('HOME')
-    a = logging.FileHandler(filename=f'{HOME}/jump_update_blacklist.log')
-    a.setFormatter(fmt=fmt)
-    a.setLevel('DEBUG')
-    b = logging.StreamHandler()
-    b.setLevel('DEBUG')
-    b.setFormatter(fmt)
-    logger.addHandler(a)
-    logger.setLevel('DEBUG')
+    logging.basicConfig(level='DEBUG', format='%(asctime)s [%(levelname)s] %(message)s')
 
+    print('Begin')
     main()

@@ -22,6 +22,4 @@ jobs:
         env: 
           JUMPSERVER_HOST: ${{secrets.JUMPSERVER_HOST}}
           JUMPSERVER_PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
-          
-        
 
