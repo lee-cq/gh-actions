@@ -114,6 +114,9 @@ if __name__ == "__main__":
     a = logging.FileHandler(filename=f'{HOME}/jump_update_blacklist.log')
     a.setFormatter(fmt=fmt)
     a.setLevel('DEBUG')
+    b = logging.StreamHandler()
+    b.setLevel('DEBUG')
+    b.setFormatter(fmt)
     logger.addHandler(a)
     logger.setLevel('DEBUG')
 
