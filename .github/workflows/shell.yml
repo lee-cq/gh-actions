@@ -1,34 +1,52 @@
-
 name: shell
 
 on:
-  issues:
-    types: [opened, edited]
-  issue_comment:
-    types: [created, edited]
-
   # 允许您从Actions选项卡手动运行此工作流
   workflow_dispatch:
 
-
-
-jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
-  input: # 处理输入信息
+jobs:
+  shell:
     runs-on: ubuntu-latest
+    continue-on-error: true
+
     steps:
       - uses: actions/checkout@v3
 
       - name: Install Tailscale
-        uses: tailscale/github-action@v1
+        uses: tailscale/github-action@ce41a99162202a647a4b24c30c558a567b926709
         with:
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          hostname: github-shell
 
-      - name: Setup Debug Session
-        uses: csexton/debugger-action@master
+      - name: Create User
+        run: |
+          sudo useradd -m -s /bin/bash -G sudo -p $(openssl passwd -1 ${{ secrets.SHELL_PASSWORD }}) ${{secrets.SHELL_USERNAME}};
+          echo success.
 
-      # - uses: shaowenchen/debugger-action@v2
-      #   name: debugger
-      #   timeout-minutes: 300
-      #   continue-on-error: true
-      #   with:
-      #     ngrok_token: ${{ secrets.NGROK_TOKEN }}
+      - name: Verify SSHD
+        run: |
+          if [ -z "$(sudo netstat -ntlp |grep -v grep |grep :22 |grep sshd)" ]; then
+            echo "sshd is not running."
+            if [ ! -f /lib/systemd/system/ssh.service ]; then
+              echo sshd is not installed. will install ...
+              sudo apt-get update;
+              sudo apt-get install -y openssh-server;
+            fi
+            echo "starting sshd ..."
+            sudo systemctl restart sshd
+          fi
+
+      - name: Debugger
+        run: |
+          touch /tmp/keepalive;
+          timeout 15000 tail -f /tmp/keepalive;
+
+      - name: Clear tailscale
+        run: |
+          if [ -f /usr/bin/tailscale ]; then
+            sudo tailscale down
+            sudo tailscale logout
+          fi
+
+#      - name: Setup Debug Session
+#        uses: csexton/debugger-action@master
