@@ -1,4 +1,4 @@
-
+name: JumpServer Update Blacklist
 on:
   schedule:
     - cron:  '30 5,17 * * *'
@@ -19,8 +19,8 @@ jobs:
       
       - run: python actions/bin/jump_update_blacklist.py
         env: 
-          HOST: ${{secrets.JUMPSERVER_HOST}}
-          PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
+          JUMPSERVER_HOST: ${{secrets.JUMPSERVER_HOST}}
+          JUMPSERVER_PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
           
         
 
