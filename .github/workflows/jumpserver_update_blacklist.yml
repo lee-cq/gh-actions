@@ -2,6 +2,7 @@ name: JumpServer Update Blacklist
 on:
   schedule:
     - cron:  '30 5,17 * * *'
+  workflow_dispatch:
 
 jobs:
   update_blacklist:
