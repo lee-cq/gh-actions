@@ -83,8 +83,8 @@ jobs:
           touch /tmp/keepalive
           echo 'created keepalive file.'
           echo 'timeout 21000s(5h 50m).'
-          timeout 15000 tail -f /tmp/keepalive || echo Timeouted.
-          echo The VM will be shutdown in 10 minutes.
+          timeout 15000 bash -c 'while true;do test -f /tmp/keepalive || break; sleep 3; done ' || echo Timeouted.
+          echo 'The VM will be shutdown in 10 minutes.'
 
       - name: Clear tailscale
         run: |
