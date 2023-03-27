@@ -92,20 +92,25 @@ jobs:
             sudo tailscale down
             sudo tailscale logout
           fi
-          
-          curl --location --request GET '${{ secrets.JUMPSERVER_HOST }}/api/v1/assets/hosts/' \
+          echo down.
+      
+      - name: Clear Jumpserver
+        run: |
+          curl --location -sSLf --request GET '${{ secrets.JUMPSERVER_HOST }}/api/v1/assets/hosts/' \
             -H 'Authorization: Token ${{ secrets.JUMPSERVER_PTOKEN }}' \
             -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002' \
-            -O hosts.json
-          
+            -o hosts.json
+
+          echo 'Hosts Info Saved .'
+
           github_hostname="github-$(hostname)"
           host_id=$(cat hosts.json |jq -r ".results[] | select(.name==\"${github_hostname}\") | .id")
+
+          echo "host_name: ${github_hostname}"
+          echo "host_id:   ${host_id}"
           
           curl --location --request DELETE "${{secrets.JUMPSERVER_HOST}}/api/v1/assets/assets/${host_id}/
             -H 'Authorization: Token ${{ secrets.JUMPSERVER_PTOKEN }}' \
             -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002'
           
           echo "shutdown now"
-
-#      - name: Setup Debug Session
-#        uses: csexton/debugger-action@master
