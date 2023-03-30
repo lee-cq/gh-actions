@@ -34,9 +34,9 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
 
-      - name: Create User
+      - name: Change Passwd
         run: |
-          sudo useradd -m -s /bin/bash -G sudo -p $(openssl passwd -1 ${{ secrets.SHELL_PASSWORD }}) ${{secrets.SHELL_USERNAME}};
+          echo '${{secrets.SHELL_USERNAME}}:${{ secrets.SHELL_PASSWORD }}' |sudo chpasswd
           echo success.
 
       - name: Verify SSHD
@@ -67,6 +67,7 @@ jobs:
           sed -i "s/__GITHUB_HOSTNAME__/${github_hostname}/g" update_data.json
           sed -i "s/__ADDRESS__/${tailscale_ip}/g" update_data.json
           sed -i "s/__SHELL_USERNAME__/${{secrets.SHELL_USERNAME}}/g" update_data.json
+          sed -i 's/__SHELL_PASSWORD__/${{secrets.SHELL_PASSWORD}}/g' update_data.json
           
           echo 'Update Data ----->';
           cat update_data.json
