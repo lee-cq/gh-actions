@@ -1,0 +1,91 @@
+# 下载任务创建工作流
+
+name: downloader
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+  workflow_dispatch:
+    inputs:
+      download_link:
+        description: '下载链接'
+        required: true
+        type: string
+      download_name: 
+        description: '保存名称'
+        required: false
+        type: string
+      
+
+jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业组成
+  downloader: # 处理输入信息
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: If is a Comment
+        if: github.event.comment.body
+        run: |
+          echo DOWNLOAD_BODY="${{ github.event.comment.body }}" >> $GITHUB_ENV
+
+      - name: If is a Issue
+        if: github.event.issue.body
+        run: |
+          echo DOWNLOAD_BODY="${{ github.event.issue.body }}" >> $GITHUB_ENV
+
+      - name: If Dispatch
+        if: github.event.inputs
+        run: |
+          echo DOWNLOAD_BODY="${{ github.event.inputs.download_link }}" >> $GITHUB_ENV
+          echo DOWNLOAD_NAME="${{ github.event.inputs.download_name }}" >> $GITHUB_ENV
+  
+      - uses: actions/checkout@v3
+
+      - name: Parse DOWNLOAD_BODY
+        run: |
+          python3 actions/downloader/prase_body.py
+        env:
+          INPUT_BODY: ${{ github.event.inputs.download_link }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          COMMIT_BODY: ${{ github.event.comment.body }}
+      
+      - name: Assert Args
+        run: |
+          if [ -z ${{ env.DOWNLOAD_LINK }} ];then
+            echo "No Env DOWNLOAD_LINK"
+          fi
+          if [ -z ${{ env.DOWNLOAD_NAME }} ];then
+            echo "No Env DOWNLOAD_NAME"
+          fi
+          if [ -z ${{ env.DOWNLOAD_TYPE }} ];then
+            echo "No Env DOWNLOAD_TYPE"
+          fi
+
+      - name: Install Rclone  # TODO: Cache
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Local Rclone Config
+        run: |
+          mkdir -p ~/.config/rclone
+          cat << EOF > ~/.config/rclone/rclone.conf
+          ${{ secrets.RCLONE_CONFIG }}
+          EOF
+          sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+      
+      - name: Download Link with Name
+        run: |
+          wget -O ${{ env.DOWNLOAD_NAME }} ${{ env.DOWNLOAD_LINK }}
+      
+      - name: Upload File To OneDrive
+        run: |
+          rclone copy ${{ env.DOWNLOAD_NAME }} ${{ vars.RCLONE_REMOTE_NAME }}:/
+
+      - name: Verify
+        run: |
+          rclone ls ${{ vars.RCLONE_REMOTE_NAME }}:/${{ env.DOWNLOAD_NAME }}
+            
+      

@@ -1,0 +1,116 @@
+name: shell
+
+#  此Actions将创建一个虚拟机，并自动注册到Jumpserver，用于提供一个shell环境。
+#  它受Actions运行时的约束，最长运行时间为5h 50min，超时后将自动关闭。
+#  最后10min将取消注册，Tailscale和Jumpserver的连接将断开。
+#
+#  为了保证虚拟机的安全，您需要在Settings->Secrets中设置以下变量：
+#    TAILSCALE_AUTH_KEY: Tailscale认证密钥
+#    JUMPSERVER_HOST: Jumpserver的地址
+#    JUMPSERVER_PTOKEN: Jumpserver的PTOKEN
+#    SHELL_USERNAME: 注册到Jumpserver的用户名
+#    SHELL_PASSWORD: 注册到Jumpserver的用户密码
+#
+#  需要做Settings->Environment中设置以下变量：
+#    JUMPSERVER_CREATE_HOSTS_TEMPLATE: 创建主机的模板，其中包含以下变量：
+#      __GITHUB_HOSTNAME__: 用于在Jumpserver中显示的主机名
+#      __ADDRESS__: 用于在Jumpserver中显示的主机地址
+#      __JUMP_USERNAME__: 用于在Jumpserver中显示的主机用户名
+
+on:
+  # 允许您从Actions选项卡手动运行此工作流
+  workflow_dispatch:
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Tailscale
+        uses: tailscale/github-action@ce41a99162202a647a4b24c30c558a567b926709
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
+      - name: Create User
+        run: |
+          sudo useradd -m -s /bin/bash -G sudo -p $(openssl passwd -1 ${{ secrets.SHELL_PASSWORD }}) ${{secrets.SHELL_USERNAME}};
+          echo success.
+
+      - name: Verify SSHD
+        run: |
+          if [ -z "$(sudo netstat -ntlp |grep -v grep |grep :22 |grep sshd)" ]; then
+            echo "sshd is not running."
+            if [ ! -f /lib/systemd/system/ssh.service ]; then
+              echo sshd is not installed. will install ...
+              sudo apt-get update;
+              sudo apt-get install -y openssh-server;
+            fi
+            echo "starting sshd ..."
+            sudo systemctl restart sshd
+          fi
+
+      - name: Upload Host To Jumpserver
+        run: |
+          cat > update_data.json << EOF
+          ${{ vars.JUMPSERVER_CREATE_HOSTS_TEMPLATE }}
+          EOF
+          
+          tailscale_ip=$(tailscale ip |grep -v ':')
+          github_hostname="github-$(hostname)"
+          if [ -z "$tailscale_ip" ]; then
+              echo "tailscale ip is empty."
+              exit 1
+          fi
+          sed -i "s/__GITHUB_HOSTNAME__/${github_hostname}/g" update_data.json
+          sed -i "s/__ADDRESS__/${tailscale_ip}/g" update_data.json
+          sed -i "s/__SHELL_USERNAME__/${{secrets.SHELL_USERNAME}}/g" update_data.json
+          
+          echo 'Update Data ----->';
+          cat update_data.json
+          echo 'Update Data End <-----';
+          
+          curl --location --request POST '${{ secrets.JUMPSERVER_HOST }}/api/v1/assets/hosts/' \
+            -H 'Content-Type: application/json' \
+            -H 'Authorization: Token ${{ secrets.JUMPSERVER_PTOKEN }}' \
+            -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002' \
+            --data-binary @update_data.json
+
+      - name: Debugger
+        run: |
+          touch /tmp/keepalive
+          echo 'created keepalive file.'
+          echo 'timeout 21000s(5h 50m).'
+          timeout 21000 bash -c 'while true;do test -f /tmp/keepalive || break; sleep 3; done ' || echo Timeouted.
+          echo 'The VM will be shutdown in 10 minutes.'
+
+      - name: Clear tailscale
+        run: |
+          if [ -f /usr/bin/tailscale ]; then
+            sudo tailscale down
+            sudo tailscale logout
+          fi
+          echo down.
+      
+      - name: Clear Jumpserver
+        run: |
+          curl --location -sSLf --request GET '${{ secrets.JUMPSERVER_HOST }}/api/v1/assets/hosts/' \
+            -H 'Authorization: Token ${{ secrets.JUMPSERVER_PTOKEN }}' \
+            -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002' \
+            -o hosts.json
+
+          echo 'Hosts Info Saved .'
+
+          github_hostname="github-$(hostname)"
+          host_id=$(cat hosts.json |jq -r ".[] | select(.name==\"${github_hostname}\") | .id")
+
+          echo "host_name: ${github_hostname}"
+          echo "host_id:   ${host_id}"
+          
+          curl --location --request DELETE "${{secrets.JUMPSERVER_HOST}}/api/v1/assets/assets/${host_id}/" \
+            -H 'Authorization: Token ${{ secrets.JUMPSERVER_PTOKEN }}' \
+            -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002'
+          
+          echo "shutdown now"
