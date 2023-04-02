@@ -20,6 +20,16 @@ name: shell
 on:
   # 允许您从Actions选项卡手动运行此工作流
   workflow_dispatch:
+    inputs:
+      hostname:
+        description: 'HostName'
+        required: false
+        default: ''
+
+      load_secret:
+        description: 'Load Secret'
+        required: false
+        default: 'false'
 
 jobs:
   shell:
@@ -38,6 +48,37 @@ jobs:
         run: |
           echo '${{secrets.SHELL_USERNAME}}:${{ secrets.SHELL_PASSWORD }}' |sudo chpasswd
           echo success.
+
+      - name: Load RClone
+        if: ${{ github.event.inputs.load_secret == 'true' }}
+        run: |
+          echo 'Load RClone'
+          curl https://rclone.org/install.sh | sudo bash
+          rclone version
+          
+          mkdir -p ~/.config/rclone
+          cat << EOF > ~/.config/rclone/rclone.conf
+          ${{ secrets.RCLONE_CONFIG }}
+          EOF
+          
+          if [ $(rclone listremotes) ]; then
+            echo "Rclone Config is OK"
+          else
+            echo "Rclone Config is Error"
+            exit 1
+          fi
+          echo success.
+
+      - name: Load Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
 
       - name: Verify SSHD
         run: |
@@ -94,7 +135,7 @@ jobs:
             sudo tailscale logout
           fi
           echo down.
-      
+
       - name: Clear Jumpserver
         run: |
           curl --location -sSLf --request GET '${{ secrets.JUMPSERVER_HOST }}/api/v1/assets/hosts/' \
