@@ -28,6 +28,7 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
       - name: If is a Comment
         if: github.event.comment.body
         run: |
+          if ${{github.event.issue.title }}
           echo DOWNLOAD_BODY="${{ github.event.comment.body }}" >> $GITHUB_ENV
 
       - name: If is a Issue

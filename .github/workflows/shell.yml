@@ -52,7 +52,7 @@ jobs:
       - name: Update Server
         run: |
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-          cp actions/shell/self_shell.sh /etc/profile.d/
+          sudo cp actions/shell/self_shell.sh /etc/profile.d/
           echo Success.
       
       - name: Load RClone
