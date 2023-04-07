@@ -1,0 +1,21 @@
+name: test Shell
+
+on:
+  push:
+    branches:
+  pull_request:
+    branches:
+
+jobs:
+  test_shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/shell
+        with:
+          hostname: ${{ github.event.inputs.hostname }}
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          JUMPSERVER_HOST: ${{secrets.JUMPSERVER_HOST}}
+          JUMPSERVER_PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
+          SHELL_USERNAME: ${{secrets.SHELL_USERNAME}}
+          SHELL_PASSWORD: ${{secrets.SHELL_PASSWORD}}

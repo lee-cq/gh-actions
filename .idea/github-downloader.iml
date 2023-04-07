@@ -7,6 +7,10 @@
       <excludeFolder url="file://$MODULE_DIR$/actions/downloader/flask_session" />
       <excludeFolder url="file://$MODULE_DIR$/.idea/httpRequests" />
       <excludeFolder url="file://$MODULE_DIR$/test/.pytest_cache" />
+      <excludeFolder url="file://$MODULE_DIR$/actions/downloader/compose/config" />
+      <excludeFolder url="file://$MODULE_DIR$/actions/downloader/compose/config/.cache" />
+      <excludeFolder url="file://$MODULE_DIR$/actions/downloader/compose/downloads" />
+      <excludeFolder url="file://$MODULE_DIR$/actions/downloader/compose" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (gh-actions)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
