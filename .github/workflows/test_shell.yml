@@ -15,7 +15,7 @@ jobs:
         with:
           hostname: ${{ github.event.inputs.hostname }}
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
-          JUMPSERVER_HOST: ${{secrets.JUMPSERVER_HOST}}
-          JUMPSERVER_PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
-          SHELL_USERNAME: ${{secrets.SHELL_USERNAME}}
-          SHELL_PASSWORD: ${{secrets.SHELL_PASSWORD}}
+          jumpserver_host: ${{secrets.JUMPSERVER_HOST}}
+          jumpserver_ptoken: ${{secrets.JUMPSERVER_PTOKEN}}
+          shell_username: ${{secrets.SHELL_USERNAME}}
+          shell_password: ${{secrets.SHELL_PASSWORD}}

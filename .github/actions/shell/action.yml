@@ -1,148 +1,40 @@
-name: 'Connect Tailscale'
-description: 'Connect your GitHub Action workflow to Tailscale'
+name: 'shell'
+description: |
+  创建一个script
+  create a shell request
+
+author: lee-cq
+branding:
+  icon: 'terminal'
+  color: 'blue'
 
 inputs:
   authkey:
-    description: 'Your Tailscale authentication key, from the admin panel.'
+    description: 'Tailscale认证密钥'
     required: true
+    # default: ''
   hostname:
-    description: 'Fixed hostname to use.'
+    description: 'HostName'
     required: false
     default: ''
-  JUMPSERVER_HOST:
+  jumpserver_host:
     description: 'Jumpserver的地址'
     required: true
-  JUMPSERVER_PTOKEN:
+    default: ''
+  jumpserver_ptoken:
     description: 'Jumpserver的PTOKEN'
     required: true
-  SHELL_USERNAME:
+    default: ''
+  shell_username:
     description: '注册到Jumpserver的用户名'
-    required: true
-  SHELL_PASSWORD:
+    required: false
+    default: 'runner'
+  shell_password:
     description: '注册到Jumpserver的用户密码'
     required: true
+    default: '123456'
 
 runs:
-  using: 'composite'
-  steps:
-    - name: Install Tailscale
-      uses: tailscale/github-action@ce41a99162202a647a4b24c30c558a567b926709
-      with:
-        authkey: ${{ inputs.authkey }}
-        hostname: ${{ inputs.hostname }}
-    - name: Change Passwd
-      shell: bash
-      run: |
-        echo '${{ inputs.SHELL_USERNAME }}:${{ inputs.SHELL_PASSWORD }}' |sudo chpasswd
-        echo success.
-    - name: Update Server
-      shell: bash
-      run: |
-        sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-        sudo cp actions/shell/self_shell.sh /etc/profile.d/
-        echo Success.
-        # TODO
-    - name: Verify SSHD
-      shell: bash
-      run: |
-        if [ -z "$(sudo netstat -ntlp |grep -v grep |grep :22 |grep sshd)" ]; then
-          echo "sshd is not running."
-          if [ ! -f /lib/systemd/system/ssh.service ]; then
-            echo sshd is not installed. will install ...
-            sudo apt-get update;
-            sudo apt-get install -y openssh-server;
-          fi
-          echo "starting sshd ..."
-          sudo systemctl restart sshd
-        fi
-
-    - name: Register Host To Jumpserver
-      shell: bash
-      run: |
-        cat > update_data.json << EOF
-        {
-          "platform": {
-              "pk": 1
-          },
-          "nodes": [
-              {
-                  "pk": "84327184-bd01-4a78-9765-b3748a7ec94d"
-              }
-          ],
-          "protocols": [
-              {
-                  "name": "ssh",
-                  "port": 22,
-                  "primary": true,
-                  "default": false,
-                  "required": false,
-                  "secret_types": [
-                      "password",
-                      "ssh_key"
-                  ],
-                  "setting": {
-                      "console": false,
-                      "security": "any",
-                      "sftp_enabled": true,
-                      "sftp_home": "/tmp",
-                      "autofill": "basic",
-                      "username_selector": "",
-                      "password_selector": "",
-                      "submit_selector": "",
-                      "script": [],
-                      "auth_username": false
-                  }
-              }
-          ],
-          "labels": [],
-          "is_active": true,
-          "name": "__GITHUB_HOSTNAME__",
-          "address": "__ADDRESS__",
-          "accounts": [
-              {
-                  "name": "__SHELL_USERNAME__",
-                  "username": "__SHELL_USERNAME__",
-                  "secret_type": {
-                      "value": "password",
-                      "label": "密码"
-                  },
-                  "spec_info": {},
-                  "comment": "",
-                  "has_secret": true,
-                  "privileged": true,
-                  "is_active": true,
-                  "secret": "__SHELL_PASSWORD__"
-              }
-          ]
-        }
-        EOF
-
-        tailscale_ip=$(tailscale ip |grep -v ':')
-        github_hostname="github-$(hostname)"
-        if [ -z "$tailscale_ip" ]; then
-            echo "tailscale ip is empty."
-            exit 1
-        fi
-        sed -i "s/__GITHUB_HOSTNAME__/${github_hostname}/g" update_data.json
-        sed -i "s/__ADDRESS__/${tailscale_ip}/g" update_data.json
-        sed -i "s/__SHELL_USERNAME__/${{inputs.SHELL_USERNAME}}/g" update_data.json
-        sed -i 's/__SHELL_PASSWORD__/${{inputs.SHELL_PASSWORD}}/g' update_data.json
-
-        echo 'Update Data ----->';
-        cat update_data.json
-        echo 'Update Data End <-----';
-
-        curl --location --request POST '${{ inputs.JUMPSERVER_HOST }}/api/v1/assets/hosts/' \
-          -H 'Content-Type: application/json' \
-          -H 'Authorization: Token ${{ secrets.JUMPSERVER_PTOKEN }}' \
-          -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002' \
-          --data-binary @update_data.json
-
-    - name: Debugger
-      shell: bash
-      run: |
-        touch /tmp/keepalive
-        echo 'created keepalive file.'
-        echo 'timeout 21000s(5h 50m).'
-        timeout 21000 bash -c 'stopout=21000; while true;do echo $((stopout=$stopout-3)) > /tmp/stopout ; test -f /tmp/keepalive || break; sleep 3; done ' || echo Timeouted.
-        echo 'The VM will be shutdown in 10 minutes.'
+  using: 'node16'
+  main: 'index.js'
+  post: 'index.js'
