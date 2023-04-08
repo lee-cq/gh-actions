@@ -2,9 +2,8 @@ name: test Shell
 
 on:
   push:
-    branches:
   pull_request:
-    branches:
+
 
 jobs:
   test_shell:
@@ -19,3 +18,13 @@ jobs:
           jumpserver_ptoken: ${{secrets.JUMPSERVER_PTOKEN}}
           shell_username: ${{secrets.SHELL_USERNAME}}
           shell_password: ${{secrets.SHELL_PASSWORD}}
+        env:
+          TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          JUMPSERVER_HOST: ${{secrets.JUMPSERVER_HOST}}
+          JUMPSERVER_PTOKEN: ${{secrets.JUMPSERVER_PTOKEN}}
+          SHELL_HOSTNAME: ${{ github.event.inputs.hostname }}
+          SHELL_USERNAME: ${{secrets.SHELL_USERNAME}}
+          SHELL_PASSWORD: ${{secrets.SHELL_PASSWORD}}
+      - run: |
+          echo 10 > /tmp/stopout
+          echo test will be done at 10 sec.

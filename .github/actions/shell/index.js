@@ -4108,6 +4108,7 @@ async function run() {
 
     core.info(`Exec ${__dirname}/main.sh`)
     exec.exec('bash', './main.sh', options)
+    core.saveState('isPost', true)
 
   } catch (error) {
     core.setFailed(error.message);

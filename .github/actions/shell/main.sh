@@ -13,16 +13,32 @@ VERSION=1.38.4
 ## ===========================
 echo "Check if authkey is set"
 # shellcheck disable=SC2154
-if [ "$authkey" == "" ]; then
-    echo "authkey is not set"
+if [ "$TAILSCALE_AUTH_KEY" == "" ]; then
+    echo "TAILSCALE_AUTH_KEY is not set"
     exit 1
 fi
+echo ok
 
 ## ===========================
 echo "Check if OS is not Linux"
 if [ "${OSTYPE}" != "linux-gnu" ]; then
     echo "OS is not Linux"
     exit 1
+fi
+echo ok
+## ===========================
+echo "Change Passwd or create user"
+if [ -z "${SHELL_USERNAME}" ]; then
+  SHELL_USERNAME="runner"
+fi
+if [ -z "${SHELL_PASSWORD}" ]; then
+    echo "SHELL_PASSWORD is not set"
+    exit 1
+fi
+if cut -d':' -f1 /etc/passwd | grep -q ${SHELL_USERNAME} ;then
+  echo "${SHELL_USERNAME}:${SHELL_PASSWORD}" | sudo chpasswd
+else
+  sudo useradd -m -s /bin/bash -G sudo -p $(openssl passwd -1 "${SHELL_PASSWORD}") ${SHELL_USERNAME};
 fi
 
 ## ===========================
@@ -46,12 +62,13 @@ sudo mkdir -p /var/lib/tailscale
 ## ===========================
 echo  "Run Tailscale"
 sudo tailscaled 2>~/tailscaled.log &
-if [ -z "${hostname}" ]; then
-  HOSTNAME="github-$(cat /etc/hostname)"
+if [ -z "${SHELL_HOSTNAME}" ]; then
+  SHELL_HOSTNAME="github-$(cat /etc/hostname)"
 fi
-sudo tailscale up --authkey "${authkey}" --hostname="${HOSTNAME}"
+sudo tailscale up --authkey "${authkey}" --hostname="${SHELL_HOSTNAME}"
 
-# Verify SSHD is running
+## ===========================
+echo "Check if sshd is running"
 if ! sudo netstat -ntlp |grep -v grep |grep :22 | grep -q sshd ; then
   echo "sshd is not running."
   if [ ! -f /lib/systemd/system/ssh.service ]; then
@@ -132,15 +149,15 @@ if [ -z "$tailscale_ip" ]; then
 fi
 sed -i "s/__GITHUB_HOSTNAME__/${github_hostname}/g" update_data.json
 sed -i "s/__ADDRESS__/${tailscale_ip}/g" update_data.json
-sed -i "s/__SHELL_USERNAME__/${shell_username}/g" update_data.json
-sed -i "s/__SHELL_PASSWORD__/${shell_password}/g" update_data.json
+sed -i "s/__SHELL_USERNAME__/${SHELL_USERNAME}/g" update_data.json
+sed -i "s/__SHELL_PASSWORD__/${SHELL_PASSWORD}/g" update_data.json
 
 echo 'Update Data ----->';
 cat update_data.json
 echo 'Update Data End <-----';
 
-curl --location --request POST "${jumpserver_host}/api/v1/assets/hosts/" \
+curl --location --request POST "${JUMPSERVER_HOST}/api/v1/assets/hosts/" \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Token ${jumpserver_ptoken}" \
+  -H "Authorization: Token ${JUMPSERVER_PTOKEN}" \
   -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002' \
   --data-binary @update_data.json
