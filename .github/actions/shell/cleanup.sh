@@ -1,4 +1,4 @@
-#/bin/env bash
+#!/usr/bin/env bash
 
 # Path: .github/actions/shell/cleanup.sh
 
@@ -7,7 +7,7 @@ echo Debugger ...
 touch /tmp/keepalive
 echo 'created keepalive file.'
 echo 'timeout 21000s(5h 50m).'
-timeout 21000 bash -c 'stopout=21000; while true;do echo $((stopout=$stopout-3)) > /tmp/stopout ; test -f /tmp/keepalive || break; sleep 3; done ' || echo Timeouted.
+timeout 21000 bash -c "stopout=21000; while true;do echo $((stopout=$stopout-3)) > /tmp/stopout ; test -f /tmp/keepalive || break; sleep 3; done " || echo Timeouted.
 echo 'The VM will be shutdown in 10 minutes.'
 
 
@@ -20,7 +20,11 @@ curl --location -sSLf --request GET "${jumpserver_host}/api/v1/assets/hosts/" \
 
 echo 'Hosts Info Saved .'
 
-github_hostname="github-$(hostname)"
+github_hostname=${hostname}
+if [ "${github_hostname}" == "" ]; then
+  github_hostname="github-$(hostname)"
+fi
+
 # shellcheck disable=SC2002
 host_id=$(cat hosts.json |jq -r ".[] | select(.name==\"${github_hostname}\") | .id")
 

@@ -141,6 +141,6 @@ echo 'Update Data End <-----';
 
 curl --location --request POST "${jumpserver_host}/api/v1/assets/hosts/" \
   -H 'Content-Type: application/json' \
-  -H "Authorization: Token ${jumpserver_ptoken }" \
+  -H "Authorization: Token ${jumpserver_ptoken}" \
   -H 'X-JMS-ORG: 00000000-0000-0000-0000-000000000002' \
   --data-binary @update_data.json

@@ -4127,7 +4127,7 @@ async function cleanup() {
   }
 }
 
-
+core.info(`isPost: ${isPost}`)
 // Main
 if (!isPost) {
   run()
