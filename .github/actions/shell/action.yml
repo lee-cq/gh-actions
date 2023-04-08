@@ -8,33 +8,8 @@ branding:
   icon: 'terminal'
   color: 'blue'
 
-inputs:
-  authkey:
-    description: 'Tailscale认证密钥'
-    required: true
-    # default: ''
-  hostname:
-    description: 'HostName'
-    required: false
-    default: ''
-  jumpserver_host:
-    description: 'Jumpserver的地址'
-    required: true
-    default: ''
-  jumpserver_ptoken:
-    description: 'Jumpserver的PTOKEN'
-    required: true
-    default: ''
-  shell_username:
-    description: '注册到Jumpserver的用户名'
-    required: false
-    default: 'runner'
-  shell_password:
-    description: '注册到Jumpserver的用户密码'
-    required: true
-    default: '123456'
-
 runs:
   using: 'node16'
+  pre: 'index.js'
   main: 'index.js'
   post: 'index.js'

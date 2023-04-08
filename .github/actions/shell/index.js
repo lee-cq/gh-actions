@@ -4035,7 +4035,7 @@ module.exports = require("util");
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
-/******/ 	
+/******/
 /******/ 	// The require function
 /******/ 	function __nccwpck_require__(moduleId) {
 /******/ 		// Check if module is in cache
@@ -4049,7 +4049,7 @@ module.exports = require("util");
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
-/******/ 	
+/******/
 /******/ 		// Execute the module function
 /******/ 		var threw = true;
 /******/ 		try {
@@ -4058,16 +4058,16 @@ module.exports = require("util");
 /******/ 		} finally {
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 		}
-/******/ 	
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/ 	
+/******/
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
-/******/ 	
+/******/
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
-/******/ 	
+/******/
 /************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
@@ -4075,68 +4075,37 @@ var __webpack_exports__ = {};
 const core = __nccwpck_require__(186);
 const exec = __nccwpck_require__(514);
 
-var isPost = !!core.getState('isPost');
-var authkey = core.getInput("authkey");
-var hostname = core.getInput("hostname");
-var jumpserver_host = core.getInput("jumpserver_host");
-var jumpserver_ptoken = core.getInput("jumpserver_ptoken");
-var shell_username = core.getInput("shell_username");
-var shell_password = core.getInput("shell_password");
-
 var options = {
   /** optional working directory.  defaults to current */
   cwd: __dirname,
   /** optional envvar dictionary.  defaults to current process's env */
   env: {
     ...process.env,
-    "isPost":isPost,
-    "authkey": authkey,
-    "hostname": hostname,
-    "jumpserver_host": jumpserver_host,
-    "jumpserver_ptoken": jumpserver_ptoken,
-    "shell_username": shell_username,
-    "shell_password": shell_password
   },
 }
 
 
 // most @actions toolkit packages have async methods
-async function run() {
+function run() {
   try {
-    core.info('Inputs: ${isPost}, ${authkey}, ${hostname}, ${jumpserver_host}, ${jumpserver_ptoken}, ${shell_username}, ${shell_password}')
-    core.info(`Inputs: ${isPost}, ${authkey}, ${hostname}, ${jumpserver_host}, ${jumpserver_ptoken}, ${shell_username}, ${shell_password}`)
-
-    core.info(`Exec ${__dirname}/main.sh`)
+    core.info(`Exec ${__dirname}/main.sh begin...`)
     exec.exec('bash', './main.sh', options)
+    core.info(`Exec ${__dirname}/main.sh done.`)
     core.saveState('isPost', true)
-
+    let _is_post = core.getState('isPost')
+    core.info(`post states is save : ${_is_post}`)
+    return _is_post
   } catch (error) {
     core.setFailed(error.message);
   }
 }
 
-// cleanup
-async function cleanup() {
-  try {
-    
-    core.info(`Exec ${__dirname}/cleanup.sh`)
-    exec.exec('bash', './cleanup.sh', options)
-
-    core.info('clean up ...')
-  } catch (error) {
-    core.setFailed(error.message);
-  }
-}
-
-core.info(`isPost: ${isPost}`)
 // Main
-if (!isPost) {
-  run()
-}
-// Post
-else {
-  cleanup()
-}
+
+core.info('run function.')
+run()
+core.info('run function done.')
+
 })();
 
 module.exports = __webpack_exports__;
