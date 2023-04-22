@@ -144,10 +144,7 @@ jobs:
                 {
                     "name": "__SHELL_USERNAME__",
                     "username": "__SHELL_USERNAME__",
-                    "secret_type": {
-                        "value": "password",
-                        "label": "密码"
-                    },
+                    "secret_type": "password",
                     "spec_info": {},
                     "comment": "",
                     "has_secret": true,
