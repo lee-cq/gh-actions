@@ -98,6 +98,9 @@ jobs:
             echo "starting sshd ..."
             sudo systemctl restart sshd
           fi
+      - name: Load Secret
+        run: |
+          echo ${{secrets}} >> ~/.config/secrets.confs
 
       - name: Upload Host To Jumpserver
         run: |
