@@ -28,11 +28,10 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
 
       - name: Install Chrome and ChromeDriver
         run: |-
-          CHROME_VERSION=113.0.5672.93
+
           # Install Chrome
-          ENDPOINT='https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable'
-          echo 'Installing Chrome ${CHROME_VERSION}'
-          wget "${ENDPOINT}/google-chrome-stable_${CHROME_VERSION}_amd64.deb" \
+          echo 'Installing Chrome'
+          wget "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
             --progress=dot:giga -O /tmp/chrome.deb
           sudo apt-get install --allow-downgrades -y /tmp/chrome.deb
           rm /tmp/chrome.deb
