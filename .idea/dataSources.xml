@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="down_txt" uuid="4133dd3f-a383-41a7-a686-4b5207d72d46">
+    <data-source source="LOCAL" name="down_txt" uuid="6c1f921a-d702-4c7f-ab9b-3bddefcece8e">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:D:\Code_new\gh-actions\actions\down_txt\down_txt.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:D:\Code_new\gh-actions\actions\down_txt\cache\down_txt.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
