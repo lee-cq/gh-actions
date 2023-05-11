@@ -28,7 +28,7 @@ jobs:  # 一个工作流由一个或多个可以顺序或并行运行的作业�
 
       - name: Install Chrome and ChromeDriver
         run: |-
-          CHROME_VERSION=113.0.1774.35
+          CHROME_VERSION=113.0.5672.93
           # Install Chrome
           ENDPOINT='https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable'
           echo 'Installing Chrome ${CHROME_VERSION}'
