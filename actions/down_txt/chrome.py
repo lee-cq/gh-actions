@@ -6,11 +6,12 @@
 @Date-Time  : 2023/5/11 14:55
 """
 from selenium.webdriver import Chrome, ChromeOptions
+from selenium.webdriver.chrome.service import Service
 
 __all__ = ['chrome']
 
 
-def chrome(executable_path='chromedriver.exe',
+def chrome(executable_path='chromedriver',
            is_headless: bool = False, headless=None,
            is_maximized: bool = False, maximized=None,
            is_incognito: bool = False, incognito=None,
@@ -53,8 +54,13 @@ def chrome(executable_path='chromedriver.exe',
                     pic=display_pic,
                     notifications=display_notifications, **kwargs
                     )
-    browser = Chrome(executable_path=executable_path,
-                     options=__opt
+
+    __service = Service(executable_path=executable_path
+
+                        )
+
+    browser = Chrome(service=__service,
+                     options=__opt,
                      )
     return browser
 
@@ -71,7 +77,7 @@ def _option(headless, maximized, incognito, js, ua, pic, notifications, **kwargs
     if incognito is True:
         option.add_argument('–-incognito')  # 基本没什么用
     if ua:
-        option.add_argument(f'user-agent="{ua}"')  # 设置UA
+        option.add_argument(f'user-agent={ua}')  # 设置UA
     if js is False:
         _pre.update({'javascript': 2})  # 设置JS
     if pic is False:
