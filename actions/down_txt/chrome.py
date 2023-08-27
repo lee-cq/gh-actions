@@ -12,6 +12,7 @@ __all__ = ['chrome']
 
 
 def chrome(executable_path='chromedriver',
+           window_sizes: tuple = None,
            is_headless: bool = False, headless=None,
            is_maximized: bool = False, maximized=None,
            is_incognito: bool = False, incognito=None,
@@ -25,6 +26,7 @@ def chrome(executable_path='chromedriver',
 
     :param ua:
     :param js:
+    :param window_sizes: 窗口大小
     :param maximized: 窗口最大化
     :param notification: 通知
     :param pic: 显示图片
@@ -62,6 +64,8 @@ def chrome(executable_path='chromedriver',
     browser = Chrome(service=__service,
                      options=__opt,
                      )
+    if window_sizes:
+        browser.set_window_size(*window_sizes)
     return browser
 
 
@@ -93,4 +97,6 @@ def _option(headless, maximized, incognito, js, ua, pic, notifications, **kwargs
             option.add_argument(_ if isinstance(_, str) else '')
 
     option.add_experimental_option('prefs', {'profile.default_content_setting_values': _pre})
+    option.add_experimental_option('excludeSwitches', ['enable-automation'])
+    option.add_argument("--disable-blink-features=AutomationControlled")  # 这里添加一些启动的参数
     return option

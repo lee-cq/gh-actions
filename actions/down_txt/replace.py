@@ -18,10 +18,18 @@ REMOVE_TEXT = r"""
 <br/*>
 br>
 ^第.*?章.*?\n
+起点手游《吞噬星空》新区火爆 起点币月票ipadmini天天送 官网 tsxk\.qidian\.com（未完待续）
+起点中文网www.欢迎广大书友光临阅读，最新、最快、最火的连载作品尽在起点原创！
+番茄推荐一本好书《宦海风月》，历史架空类的，很不错啊，地址：http://www\./Book/1623706\.aspx
+[\(（\[【].*?qidian\.com.*?[\)）\]】]
+章节报错
+热门推荐：.*$
+
 """
 
 REPLACE_DICT = {
-    'se': '色', 'xian': '现', 'xiao': '小', 'xue': '雪', 'xun': '寻', 'xuan': '玄', 'yan': '眼'
+    '丢shi': '丢失',
+    'se': '色', 'xian': '现', 'xiao': '小', 'xue': '雪', 'xun': '寻', 'xuan': '玄', 'yan': '眼',
 }
 
 __all__ = ['replace', 'replace_from_sql']
@@ -29,13 +37,18 @@ __all__ = ['replace', 'replace_from_sql']
 
 def replace(s: str):
     # remove
-    s = re.sub(r'\n+', '\n', s)
+    s = re.sub(r'\n+', '\n', s, flags=re.IGNORECASE)
     for line in REMOVE_TEXT.split('\n'):
-        s = re.sub(line, '', s)
-
+        _s = s
+        s = re.sub(line, '', s, flags=re.IGNORECASE)
+        if _s != s:
+            logger.debug('Removed: %s', line)
     # replace
     for k, v in REPLACE_DICT.items():
+        _s = s
         s = re.sub(k, v, s)
+        if _s != s:
+            logger.debug('Removed: %s', k)
     return s
 
 
@@ -66,7 +79,7 @@ def replace_from_sql(sql: BaseSQLAPI, table: str = None):
                 for title, body in _lines:
                     new_body = replace(body)
                     if body == new_body:
-                        logger.info(f'{title} No change. continue.')
+                        # logger.info(f'{title} No change. continue.')
                         continue
                     logger.info(f'Replace {_t} {title}')
                     sql.write_db(f"update `{_t}` set body='{new_body}' where title='{title}'")
@@ -75,5 +88,3 @@ def replace_from_sql(sql: BaseSQLAPI, table: str = None):
             continue
     else:
         logger.info('Replace all done.')
-
-
