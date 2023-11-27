@@ -17,4 +17,4 @@ function sec2min() {
 
 alias ll='ls -Ahl'
 alias stopout="cat /tmp/stopout | sec2min"
-alist stoprun="rm -f /tmp/keepalive && exit"
+alias stoprun="rm -f /tmp/keepalive && exit"
