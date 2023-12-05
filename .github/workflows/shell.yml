@@ -58,9 +58,11 @@ jobs:
           chmod 600 ~/.ssh/*
 
       - name: Update Server
-        run: |
           sudo ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
           sudo cp actions/shell/self_shell.sh /etc/profile.d/
+          git config --global user.email "lee-cq@qq.com"
+          git config --global user.name "Lee CQ"
+          echo ${{secrets.GH_P_TOKEN}} |gh auth login --with-token
           echo Success.
       
       - name: Load RClone
