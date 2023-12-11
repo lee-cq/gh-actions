@@ -53,9 +53,8 @@ jobs:
         run: |
           git clone https://gist.github.com/lee-cq/ed0f7e2bf9e039f1797c5b700ba118ec
           mkdir -p ~/.ssh
-          cp ed0f7e2bf9e039f1797c5b700ba118ec/* ~/.ssh
-          chmod 700 ~/.ssh
-          chmod 600 ~/.ssh/*
+          cd ed0f7e2bf9e039f1797c5b700ba118ec || exit 1
+          chmod +x setup.sh && ./setup.sh
 
       - name: Update Server
         run: |
