@@ -43,7 +43,9 @@ jobs:
         uses: tailscale/github-action@ce41a99162202a647a4b24c30c558a567b926709
         with:
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
-
+          args: "--ssh "
+          version: '1.60.0'
+          
       - name: Change Passwd
         run: |
           echo '${{secrets.SHELL_USERNAME}}:${{ secrets.SHELL_PASSWORD }}' |sudo chpasswd
